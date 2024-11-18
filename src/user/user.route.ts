@@ -1,41 +1,109 @@
-import express, { Request, Response } from 'express';
-import { db } from '../database';
+import { Router } from 'express';
 
-const router = express.Router();
 
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const { name, email, universityId } = req.body;
-    const university = await db.models.University.findByPk(universityId); 
+const userRouter = Router();
 
-    if (!university) {
-      res.status(404).json({ error: 'University not found' });
-      return;
-    }
+let users = [
+  { id: 1, name: 'John Doe', email: 'john@example.com', universityId: 1, subjects: ['Math', 'Physics'] },
+  { id: 2, name: 'Jane Smith', email: 'jane@example.com', universityId: 2, subjects: ['Biology', 'Chemistry'] },
+];
 
-    if (await db.models.User.findOne({ where: { email } })) {
-      throw new Error("User already exists.")
-    }
-    
-    const user = await db.models.User.create({ name, email, universityId });
-    res.status(201).json(user);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+let universities = [
+  { id: 1, name: 'Technical University', location: 'Sofia' },
+  { id: 2, name: 'Sofia University', location: 'Sofia' },
+];
+
+userRouter.get('/', (req, res) => {
+  const usersWithDetails = users.map(user => {
+    const university = universities.find(u => u.id === user.universityId);
+    const userWithDetails = { 
+      ...user, 
+      university,  
+      subjects: user.subjects  
+    };
+    return userWithDetails;
+  });
+  res.json(usersWithDetails);
+});
+
+userRouter.get('/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const user = users.find((u) => u.id === userId);
+  if (user) {
+    const university = universities.find(u => u.id === user.universityId);
+    const userWithDetails = {
+      ...user,
+      university, 
+      subjects: user.subjects
+    };
+    res.json(userWithDetails)
+  } else {
+    res.status(404).json({ message: 'User not found' });
   }
 });
 
-router.get('/', async (_req: Request, res: Response) => {
-  try {
-    const users = await db.models.User.findAll({
-      include: {
-        model: db.models.University,
-        as: 'university',
-      },
-    });
-    res.status(200).json(users);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+userRouter.post('/', (req, res) => {
+  const newUser = {
+    id: users.length + 1,
+    name: req.body.name,
+    email: req.body.email,
+    universityId: req.body.universityId,
+    subjects: req.body.subjects || [], 
+  };
+  users.push(newUser);
+  res.status(201).json(newUser);
+});
+
+userRouter.put('/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const userIndex = users.findIndex((u) => u.id === userId);
+  if (userIndex !== -1) {
+    users[userIndex] = {
+      ...users[userIndex],
+      name: req.body.name,
+      email: req.body.email,
+      universityId: req.body.universityId,
+      subjects: req.body.subjects || users[userIndex].subjects, 
+    };
+    res.json(users[userIndex]);
+  } else {
+    res.status(404).json({ message: 'User not found' });
   }
 });
 
-export default router;
+userRouter.delete('/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const userIndex = users.findIndex((u) => u.id === userId);
+  if (userIndex !== -1) {
+    const deletedUser = users.splice(userIndex, 1);
+    res.json(deletedUser[0]);
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+});
+
+userRouter.patch('/update-university/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const user = users.find((u) => u.id === userId);
+
+  if (user) {
+    user.universityId = req.body.universityId;
+    res.json(user);
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+});
+
+userRouter.patch('/update-subjects/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const user = users.find((u) => u.id === userId);
+
+  if (user) {
+    user.subjects = req.body.subjects; 
+    res.json(user);
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+});
+
+export default userRouter;

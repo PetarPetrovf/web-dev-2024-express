@@ -1,33 +1,41 @@
-import express, { Request, Response } from 'express';
-import { db } from '../database';
+import { Router } from 'express';
 
-const router = express.Router();
+const universityRouter = Router();
 
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const { name, town } = req.body;
-    if (await db.models.University.findOne({ where: { name } })) {
-      throw new Error("University already exists.")
-    }
-    const university = await db.models.University.create({ name, town });
-    res.status(201).json(university);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+let universities = [
+  { id: 1, name: 'Technical University', location: 'Sofia' },
+  { id: 2, name: 'Sofia University', location: 'Sofia' },
+];
+
+universityRouter.get('/', (req, res) => {
+  res.json(universities);
+});
+
+universityRouter.post('/', (req, res) => {
+  const { name, location } = req.body;
+  const existingUniversity = universities.find((u) => u.name === name);
+  if (existingUniversity) {
+    res.status(400).json({ message: 'University with this name already exists' });
+  }
+  const newUniversity = {
+    id: universities.length + 1,
+    name,
+    location,
+  };
+  universities.push(newUniversity);
+  res.status(201).json(newUniversity);
+});
+
+universityRouter.delete('/:id', (req, res) => {
+  const universityId = parseInt(req.params.id);
+  const universityIndex = universities.findIndex((u) => u.id === universityId);
+  if (universityIndex !== -1) {
+    const deletedUniversity = universities.splice(universityIndex, 1);
+    res.json(deletedUniversity[0]);
+  } else {
+    res.status(404).json({ message: 'University not found' });
   }
 });
 
-router.get('/', async (_req: Request, res: Response) => {
-  try {
-    const universities = await db.models.University.findAll({
-      include: {
-        model: db.models.User,
-        as: 'users',
-      },
-    });
-    res.status(200).json(universities);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+export default universityRouter;
 
-export default router;

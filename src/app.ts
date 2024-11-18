@@ -1,7 +1,7 @@
+// src/app.ts
 import express from 'express';
 import userRouter from './user/user.route';
 import universityRouter from './university/university.route';
-import { db } from './database';
 
 const app = express();
 const PORT = 3000;
@@ -11,9 +11,6 @@ app.use(express.json());
 app.use('/user', userRouter);
 app.use('/university', universityRouter);
 
-
-app.listen(PORT, async () => {
-  /** Drops database on each restart. Disable if you want to keep the data */
-  await db.sequelize.sync({ force: true })
+app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
