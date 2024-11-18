@@ -7,7 +7,7 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const { name, town } = req.body;
     if (await db.models.University.findOne({ where: { name } })) {
-      throw new Error("University already exists.")
+        throw new Error("University already exists.")
     }
     const university = await db.models.University.create({ name, town });
     res.status(201).json(university);
