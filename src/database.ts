@@ -1,6 +1,8 @@
 import { Sequelize } from 'sequelize';
 import { UserModel } from './user/user';
 import { UniversityModel } from './university/university';
+import { SubjectModel } from './subject/subject';
+
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
@@ -12,7 +14,8 @@ export const db = {
     Sequelize,
     models: {
         User: UserModel(sequelize),
-        University: UniversityModel(sequelize)
+        University: UniversityModel(sequelize),
+        Subject: SubjectModel(sequelize)
     },
 };
 
@@ -25,3 +28,15 @@ db.models.University.hasMany(db.models.User, {
     foreignKey: 'universityId',
     as: 'users',
 });
+
+db.models.User.belongsToMany(db.models.Subject, {
+    through: 'UserSubjects',
+    as: 'subjects',
+    foreignKey: 'userId',
+    });
+     
+    db.models.Subject.belongsToMany(db.models.User, {
+    through: 'UserSubjects',
+    as: 'users',
+    foreignKey: 'subjectId',
+    });
